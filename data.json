@@ -1,1 +1,30 @@
-{"galleries":[{"path":"Wild%20Nature","name":"Wild Nature","images":[]},{"name":"fajne to je","path":"fajne-to-je","images":[{"path":"fajne-to-je-1641417798264-917.png","fullpath":"fajne-to-je/fajne-to-je-1641417798264-917.png","name":"fajne-to-je-1641417798264-917","modified":"2022-01-05T21:23:18.268Z"},{"path":"fajne-to-je-1641417798266-719.png","fullpath":"fajne-to-je/fajne-to-je-1641417798266-719.png","name":"fajne-to-je-1641417798266-719","modified":"2022-01-05T21:23:18.268Z"}]}]}
+{
+    "galleries": [
+      {
+        "path": "wild-nature",
+        "name": "Wild Nature"
+      },
+      {
+        "path": "cars",
+        "name": "cars"
+      },
+      {
+        "path": "animas",
+        "name": "Animals",
+        "images": [
+            {
+              "path": "elephant.jpg",
+              "fullpath": "Animals/elephant.jpg",
+              "name": "Elephant",
+              "modified": "2017-04-19T08:11:00.0+0200"
+            },
+            {
+              "path": "lion.jpg",
+              "fullpath": "Animals/lion.jpg",
+              "name": "Lion",
+              "modified": "2017-04-19T08:11:32.0+0200"
+            }
+          ]
+      }
+    ]
+  }
