@@ -1,38 +1,45 @@
 const fs = require('fs');
 const path = require('path');
 const slugify = require('slugify');
+const util = require('util');
 
-exports.get_data = () => {
-    const data = fs.readFileSync(path.join(__dirname, '../', "data.json"), 'utf8');
+const readFile = util.promisify(fs.readFile);
+const saveFile = util.promisify(fs.writeFile);
+
+exports.get_data = async() => {
+    const data = await readFile(path.join(__dirname, '../', "data.json"), 'utf8');
     return JSON.parse(data);
 }
 
-exports.save_data = (data) => {
-    fs.writeFileSync(path.join(__dirname, '../', "data.json"), JSON.stringify(data));
+exports.save_data = async data => {
+    await saveFile(path.join(__dirname, '../', "data.json"), JSON.stringify(data));
     return true;
 }
 
-exports.getGalleryByName = name => {
+exports.getGalleryByName = async name => {
     let return_obj = { code: 404, status: 'error', message: `Can't find gallery with name ${name}` };
-    this.get_data().galleries.map(element => {
+    const data = await this.get_data();
+    data.galleries.map(element => {
         if(element.name === name)
             return_obj = element;
     });
     return return_obj;
 }
 
-exports.getGalleryByPath = path => {
+exports.getGalleryByPath = async path => {
     let return_obj = { code: 404, status: 'error', message: `Can't find gallery with path ${path}` };
-    this.get_data().galleries.map(element => {
+    const data = await this.get_data();
+    data.galleries.map(element => {
         if(element.path === path)
             return_obj = element;
     });
     return return_obj;
 }
 
-exports.getGalleries = required_rows => {
+exports.getGalleries = async required_rows => {
     const return_obj = { galleries: []};
-    this.get_data().galleries.map(element => {
+    const data = await this.get_data();
+    data.galleries.map(element => {
         const one_return_el = {};
         Object.keys(element).forEach(el_row => {
             required_rows.forEach(row => {
@@ -45,43 +52,55 @@ exports.getGalleries = required_rows => {
     return return_obj;
 }
 
-exports.postGallery = name => {
-    let new_data = this.get_data();
+exports.postGallery = async name => {
+    let new_data = await this.get_data();
     const path = slugify(name, { lower: true, strict: true, trim: true })
     new_data.galleries.push({name, path });
-    this.save_data(new_data);
+    await this.save_data(new_data);
     return { name, path };
 }
 
-exports.removeGalleryOrPhotoByPath = path => {
-    const default_data = this.get_data();
-    const data = this.get_data().galleries.filter(element => element.path !== path)
-    data.forEach(element => {
-        if(!element.images) Object.assign(element, {images: []});
-        element.images = element.images.filter(image => image.path !== path)
-    })
+exports.removeGalleryOrPhotoByPath = async path => {
+    const default_data = await this.get_data();
+    let data = await this.get_data();
+    data = data.galleries.filter(element => element.path !== path)
+    if(JSON.stringify(default_data) === JSON.stringify({ galleries: data })){
+        data.forEach(element => {
+            if(!element.images) Object.assign(element, {images: []});
+            element.images.forEach(image => {
+                if(image.path === path){
+                    fs.unlink(`./public/images/${image.fullpath}`, (err) => { err && console.log(err) });
+                }
+            })
+            element.images = element.images.filter(image => image.path !== path)
+        })
+    } else {
+        fs.rm(`./public/images/${path}`, { recursive: true, force: true }, (err) => { err && console.log(err) });
+    }
+
     if(JSON.stringify(default_data) === JSON.stringify({ galleries: data })){
         return { code: 404, status: 'error', message: `Gallery/photo does not exists` };
     } else {
-        this.save_data({ galleries: data });
+        await this.save_data({ galleries: data });
         return  { code: 200, status: 'success', message: `Gallery/photo was deleted` };;
     }
 }
 
 
-exports.saveGalleryByPath = (path, new_gallery_data) => {
-    const data = this.get_data();
+exports.saveGalleryByPath = async (path, new_gallery_data) => {
+    const data = await this.get_data();
     data.galleries.map((element, index) => {
         if(path === element.path){
             data.galleries[index] = new_gallery_data;
         }
     })
-    this.save_data(data);
+    await this.save_data(data);
     return true;
 }
 
-exports.postPhotosToGallery = (path, images) => {
-    const gallery = this.getGalleryByPath(path);
+exports.postPhotosToGallery = async (path, images) => {
+    const gallery = await this.getGalleryByPath(path);
+    if(gallery.code === 404) return gallery;
     const uploaded = [];
     if(!gallery.images) Object.assign(gallery, {images: []});
     images.forEach(image => {
@@ -94,6 +113,6 @@ exports.postPhotosToGallery = (path, images) => {
         gallery.images.push(new_image);
         uploaded.push(new_image)
     })
-    this.saveGalleryByPath(path, gallery);
+    await this.saveGalleryByPath(path, gallery);
     return uploaded;
 }

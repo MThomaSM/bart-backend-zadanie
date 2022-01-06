@@ -19,13 +19,12 @@ app.use(helmet())
 
 const limiter = rateLimit({
     max: 100, 
-    windowMs: 10 * 60 * 1000,  //10 minut
+    windowMs: 10000,  //10 sekund
     message: { status: 'error', message: 'Too many request from this IP, plese try again in an 10 minutes' } 
 });
 app.use('/', apiRouter);
 
 app.all('*', catchAsync(async (req, res, next) => {
-    // next(new Error(`Can't find ${req.originalUrl}`));
     res.status(404).json({ code: 404, status: 'error', message: `Can't find ${req.originalUrl}` });
 }));
 

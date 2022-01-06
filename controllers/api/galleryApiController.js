@@ -40,7 +40,7 @@ exports.gallery = {
     get: catchAsync(async(req, res, next) => {
         const { path } = req.params;
         const fields = req.query.fields ? req.query.fields.split(',') : ["name", "path"]
-        res.status(200).json((path) ? Gallery.getGalleryByPath(path) : Gallery.getGalleries(fields));
+        res.status(200).json(path ? await Gallery.getGalleryByPath(path) : await Gallery.getGalleries(fields));
     }),
     post: catchAsync(async(req, res, next) => {
         if(!req.params.path){
@@ -58,29 +58,29 @@ exports.gallery = {
                 "additionalProperties": false
             })
             const valid = validate(req.body);
+            const name_check = await Gallery.getGalleryByName(name);
             if(valid === false){
                 return res.status(400).json({ code: 400, payload: validate.errors, name: "IVALID_SCHEMA", message: `Invalid request. The request doesn't conform to the schema.` })
             }
-            if(Gallery.getGalleryByName(name).code !== 404){
+            if(name_check.code !== 404){
                 return res.status(409).json({ code: 409, status: 'error', message: `Gallery with this name already exists` })
             }
             if(req.body.name.includes('/')){
                 return res.status(409).json({ code: 409, status: 'error', message: `Gallery name can't contain a slash` })
             }
-            return res.status(201).json(Gallery.postGallery(req.body.name));
+            return res.status(201).json(await Gallery.postGallery(req.body.name));
         } else {
-            //console.log("photo" + req.file);
-            const uploaded = Gallery.postPhotosToGallery(req.params.path, req.files);
+            const uploaded = await Gallery.postPhotosToGallery(req.params.path, req.files);
             return res.status(201).json({ uploaded });
         }
     }),
     delete: catchAsync(async(req, res, next) => {
-        return res.status(200).json(Gallery.removeGalleryOrPhotoByPath(req.params.path));
+        return res.status(200).json(await Gallery.removeGalleryOrPhotoByPath(req.params.path));
     }),
     thumbnailGet: catchAsync(async(req, res, next) => {
         const { dismension, path } = req.params;
         const [ w,h ] = dismension.split("x");
-        const data = Gallery.get_data();
+        const data = await Gallery.get_data();
         let fullPath = "";
         data.galleries.forEach(element => {
             if(element.images && element.images.length > 0) {
@@ -98,12 +98,5 @@ exports.gallery = {
             'Content-Length': img.length
         })
         res.end(img); 
-    })
-}
-
-const facebook = {
-    get: catchAsync(async(req, res, next) => {
-        console.log(res.user);
-        res.status(200).json(res.user);
     })
 }
