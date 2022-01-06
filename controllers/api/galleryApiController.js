@@ -40,7 +40,14 @@ exports.gallery = {
     get: catchAsync(async(req, res, next) => {
         const { path } = req.params;
         const fields = req.query.fields ? req.query.fields.split(',') : ["name", "path"]
-        res.status(200).json(path ? await Gallery.getGalleryByPath(path) : await Gallery.getGalleries(fields));
+        let return_data = {}
+        if(path){
+            const data = await Gallery.getGalleryByPath(path);
+            return_data = { gallery: { path: data.path, name: data.name }, images: data.images };
+        } else {
+            return_data = await Gallery.getGalleries(fields);
+        }
+        res.status(200).json(return_data);
     }),
     post: catchAsync(async(req, res, next) => {
         if(!req.params.path){
